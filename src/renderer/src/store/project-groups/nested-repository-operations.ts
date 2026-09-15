@@ -47,7 +47,8 @@ export function createNestedRepositoryActions(
               await window.api.projectGroups.scanNested({
                 path,
                 connectionId,
-                scanId: controls?.scanId
+                scanId: controls?.scanId,
+                ...(controls?.options ? { options: controls.options } : {})
               })
             )
           } finally {

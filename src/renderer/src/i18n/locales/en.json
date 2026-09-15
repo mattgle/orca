@@ -12768,7 +12768,8 @@
             "fc3095d2ed": "explorer",
             "aiVaultSessionHistory": "Agents",
             "folderWorkspaces": "Attached worktrees",
-            "parentPrChecks": "PR Checks"
+            "parentPrChecks": "PR Checks",
+            "folderWorkspaceChanges": "Workspace changes"
           },
           "right": {
             "panel": {
@@ -16450,6 +16451,33 @@
           "actionsUnavailable": "Plugin actions are not available in this client.",
           "messageTooLarge": "Message exceeds the size limit.",
           "tooManyRequests": "Too many requests."
+        },
+        "FolderWorkspaceChangesPanel": {
+          "discardRepoTitle": "Discard all changes in \"{{value0}}\"?",
+          "discardRepoDescription": "This will revert modified files, unstage staged changes and delete untracked files. Ignored files are kept. This cannot be undone.",
+          "discardRepoConfirm": "Discard all",
+          "discardTitle": "Discard changes?",
+          "discardDescription": "This cannot be undone.",
+          "discardRepoFileCount": "{{value0}} changed file(s)",
+          "cancel": "Cancel",
+          "discardConfirm": "Discard",
+          "unavailable": "Workspace changes are only shown for folder workspaces.",
+          "summary": "{{value0}} of {{value1}} repos · {{value2}} files",
+          "refresh": "Refresh workspace changes",
+          "title": "Workspace changes",
+          "expandAll": "Expand all repos",
+          "collapseAll": "Collapse all repos",
+          "hostUnavailableTitle": "Folder host unavailable",
+          "hostUnavailableCopy": "Orca cannot tell which host owns this folder, so git status is not read.",
+          "scanFailedTitle": "Could not scan this folder",
+          "scanFailedCopy": "Refresh to try again.",
+          "noReposTitle": "No git repositories found",
+          "noReposCopy": "Only repositories directly inside this folder are scanned.",
+          "noChangesTitle": "No changes",
+          "noChangesCopy": "Edited files appear here as you save them.",
+          "statusFailed": "Could not read git status.",
+          "discardAllInRepo": "Discard all changes in {{value0}}",
+          "discardRepoFailed": "Failed to discard some changes in {{value0}}"
         }
       },
       "link": {
