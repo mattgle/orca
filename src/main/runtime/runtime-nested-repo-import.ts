@@ -34,16 +34,23 @@ function sanitizeImportError(fallback: string, error: unknown): string {
 export class RuntimeNestedRepoImport {
   constructor(private readonly deps: RuntimeNestedRepoImportDependencies) {}
 
-  async scan(path: string, options?: NestedRepoScanOptions): Promise<NestedRepoScanResult> {
+  async scan(
+    path: string,
+    options?: Pick<NestedRepoScanOptions, 'maxDepth' | 'maxRepos'>
+  ): Promise<NestedRepoScanResult> {
     if (!isAbsolute(path)) {
       throw new Error('Project path must be an absolute path')
     }
     await awaitWindowsHostGitEnvironmentReady({ cwd: path })
-    // Why: callers may send explicit `undefined` fields; those must not erase the runtime timeout.
-    const overrides = Object.fromEntries(
-      Object.entries(options ?? {}).filter(([, value]) => value !== undefined)
-    )
-    return scanNestedRepos({ path, options: { timeoutMs: 15_000, ...overrides } })
+    // Why: the RPC forwards only the bounds; the runtime timeout is not client-controlled.
+    return scanNestedRepos({
+      path,
+      options: {
+        timeoutMs: 15_000,
+        ...(options?.maxDepth !== undefined ? { maxDepth: options.maxDepth } : {}),
+        ...(options?.maxRepos !== undefined ? { maxRepos: options.maxRepos } : {})
+      }
+    })
   }
 
   async import(args: {

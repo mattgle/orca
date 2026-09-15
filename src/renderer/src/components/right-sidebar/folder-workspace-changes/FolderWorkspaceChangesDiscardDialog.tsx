@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog'
 import { translate } from '@/i18n/i18n'
 import {
+  discardDeletesEntryFile,
   getDiscardEntryConfirmationCopy,
   type DiscardConfirmationCopy
 } from '../source-control/commit/discard-confirmation'
@@ -53,7 +54,10 @@ export function FolderWorkspaceChangesDiscardDialog({
       ? getDiscardEntryConfirmationCopy(pendingDiscard.entry)
       : getRepoDiscardConfirmationCopy(pendingDiscard.repo.name)
   }, [pendingDiscard])
-  const ConfirmIcon = copy?.confirmLabel.startsWith('Delete') ? Trash : Undo2
+  const ConfirmIcon =
+    pendingDiscard?.kind === 'entry' && discardDeletesEntryFile(pendingDiscard.entry)
+      ? Trash
+      : Undo2
 
   return (
     <Dialog

@@ -78,8 +78,7 @@ export const ProjectGroupScanNested = z.object({
   options: z
     .object({
       maxDepth: OptionalPositiveInt,
-      maxRepos: OptionalPositiveInt,
-      timeoutMs: OptionalPositiveInt.nullable()
+      maxRepos: OptionalPositiveInt
     })
     .optional()
 })

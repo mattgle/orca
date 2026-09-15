@@ -45,7 +45,6 @@ export type FolderWorkspaceChangesActions = {
     entry: GitStatusEntry,
     event?: SourceControlRowOpenEvent
   ) => void
-  openEntryFile: (repo: FolderWorkspaceChangedRepo, entry: GitStatusEntry) => void
   stageEntry: (repo: FolderWorkspaceChangedRepo, filePath: string) => Promise<void>
   unstageEntry: (repo: FolderWorkspaceChangedRepo, filePath: string) => Promise<void>
   requestDiscardEntry: (repo: FolderWorkspaceChangedRepo, entry: GitStatusEntry) => void
@@ -125,25 +124,6 @@ export function useFolderWorkspaceChangesActions({
       openDiff(worktreeId, filePath, entry.path, language, entry.area === 'staged', { preview })
     },
     [openDiff, openFile, worktreeId]
-  )
-
-  const openEntryFile = useCallback<FolderWorkspaceChangesActions['openEntryFile']>(
-    (repo, entry) => {
-      if (!worktreeId) {
-        return
-      }
-      openFile(
-        {
-          filePath: joinPath(repo.path, entry.path),
-          relativePath: entry.path,
-          worktreeId,
-          language: detectLanguage(entry.path),
-          mode: 'edit'
-        },
-        { preview: false }
-      )
-    },
-    [openFile, worktreeId]
   )
 
   const runEntryMutation = useCallback(
@@ -262,7 +242,6 @@ export function useFolderWorkspaceChangesActions({
 
   return {
     openEntry,
-    openEntryFile,
     stageEntry,
     unstageEntry,
     requestDiscardEntry: useCallback(
