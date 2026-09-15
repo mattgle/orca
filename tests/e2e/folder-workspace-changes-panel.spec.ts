@@ -52,12 +52,13 @@ function createMetaRepoLayout(): MetaRepoLayout {
 test.describe('folder workspace changes panel', () => {
   let layout: MetaRepoLayout
 
-  test.beforeEach(() => {
+  // Why: Windows keeps the watched folder locked until Electron exits, so the
+  // cleanup must run after the electronApp fixture teardown.
+  test.beforeEach(({ registerPostElectronShutdownCleanup }) => {
     layout = createMetaRepoLayout()
-  })
-
-  test.afterEach(() => {
-    rmSync(layout.folderPath, { recursive: true, force: true })
+    registerPostElectronShutdownCleanup(async () => {
+      rmSync(layout.folderPath, { recursive: true, force: true })
+    })
   })
 
   test('lists only dirty sibling repos, refreshes on disk edits, and discards a repo', async ({

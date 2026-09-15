@@ -14,6 +14,8 @@ export type FolderWorkspaceRepoCandidate = {
 export type FolderWorkspaceChangedRepo = FolderWorkspaceRepoCandidate & {
   branch: string | null
   entries: GitStatusEntry[]
+  /** Git status was capped, so `entries` is only a prefix of the real change set. */
+  didHitLimit: boolean
 }
 
 export type FolderWorkspaceRepoStatusOutcome =
@@ -66,7 +68,8 @@ export function selectChangedRepos(
     changed.push({
       ...candidate,
       branch: outcome.status.branch ?? null,
-      entries: outcome.status.entries
+      entries: outcome.status.entries,
+      didHitLimit: outcome.status.didHitLimit === true
     })
   }
   return {
@@ -84,6 +87,16 @@ export const REPO_DISCARD_AREA_ORDER: readonly DiscardAllArea[] = [
   'unstaged',
   'untracked'
 ]
+
+/**
+ * A capped status only lists a prefix of the changes, so a whole-repo discard built from it would
+ * leave the repo dirty while reporting success. Refuse instead of discarding a partial set.
+ */
+export function isRepoDiscardBlocked(
+  repo: Pick<FolderWorkspaceChangedRepo, 'didHitLimit'>
+): boolean {
+  return repo.didHitLimit
+}
 
 /** Paths per area in the order a whole-repo discard must run them (staged first, see runDiscardAllForArea). */
 export function getRepoDiscardPathsByArea(

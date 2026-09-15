@@ -7,7 +7,11 @@ import type { GitStatusEntry } from '../../../../../shared/git-status-types'
 import { ActionButton } from '../source-control/listing/action-button'
 import { UncommittedEntryRow } from '../source-control/listing/uncommitted-entry-row'
 import type { SourceControlRowOpenEvent } from '../source-control/listing/split-open'
-import { buildRepoEntryKey, type FolderWorkspaceChangedRepo } from './changed-repo-model'
+import {
+  buildRepoEntryKey,
+  isRepoDiscardBlocked,
+  type FolderWorkspaceChangedRepo
+} from './changed-repo-model'
 
 export function FolderWorkspaceRepoSection({
   repo,
@@ -74,7 +78,7 @@ export function FolderWorkspaceRepoSection({
               icon={Undo2}
               title={discardAllLabel}
               onClick={onDiscardRepo}
-              disabled={isExecutingDiscard}
+              disabled={isExecutingDiscard || isRepoDiscardBlocked(repo)}
             />
           </div>
         </div>

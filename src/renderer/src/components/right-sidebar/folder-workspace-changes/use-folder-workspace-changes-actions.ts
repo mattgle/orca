@@ -24,7 +24,11 @@ import {
   shouldOpenSourceControlRowAsPreview,
   type SourceControlRowOpenEvent
 } from '../source-control/listing/split-open'
-import { getRepoDiscardPathsByArea, type FolderWorkspaceChangedRepo } from './changed-repo-model'
+import {
+  getRepoDiscardPathsByArea,
+  isRepoDiscardBlocked,
+  type FolderWorkspaceChangedRepo
+} from './changed-repo-model'
 
 export type PendingFolderWorkspaceDiscard =
   | { kind: 'entry'; repo: FolderWorkspaceChangedRepo; entry: GitStatusEntry }
@@ -173,8 +177,30 @@ export function useFolderWorkspaceChangesActions({
     [gitContextFor, runEntryMutation]
   )
 
+  const notifyDiscardBlocked = useCallback((repo: FolderWorkspaceChangedRepo): void => {
+    toast.error(
+      translate(
+        'auto.components.rightSidebar.FolderWorkspaceChangesPanel.discardRepoBlockedByLimit',
+        'Too many changes in {{value0}} to discard all at once',
+        { value0: repo.name }
+      ),
+      {
+        description: translate(
+          'auto.components.rightSidebar.FolderWorkspaceChangesPanel.discardRepoBlockedByLimitCopy',
+          'Git status was cut short, so only part of the change list is known. Discard from the repo itself.'
+        )
+      }
+    )
+  }, [])
+
   const discardRepo = useCallback(
     async (repo: FolderWorkspaceChangedRepo): Promise<void> => {
+      // Why: a capped status lists only a prefix of the changes; discarding that prefix would report
+      // success while leaving the repo dirty.
+      if (isRepoDiscardBlocked(repo)) {
+        notifyDiscardBlocked(repo)
+        return
+      }
       const context = gitContextFor(repo)
       let failureCount = 0
       for (const { area, paths } of getRepoDiscardPathsByArea(repo.entries)) {
@@ -202,7 +228,7 @@ export function useFolderWorkspaceChangesActions({
       }
       onMutated()
     },
-    [gitContextFor, onMutated]
+    [gitContextFor, notifyDiscardBlocked, onMutated]
   )
 
   const confirmPendingDiscard = useCallback(async (): Promise<void> => {
@@ -236,7 +262,16 @@ export function useFolderWorkspaceChangesActions({
       (repo, entry) => setPendingDiscard({ kind: 'entry', repo, entry }),
       []
     ),
-    requestDiscardRepo: useCallback((repo) => setPendingDiscard({ kind: 'repo', repo }), []),
+    requestDiscardRepo: useCallback(
+      (repo) => {
+        if (isRepoDiscardBlocked(repo)) {
+          notifyDiscardBlocked(repo)
+          return
+        }
+        setPendingDiscard({ kind: 'repo', repo })
+      },
+      [notifyDiscardBlocked]
+    ),
     pendingDiscard,
     cancelPendingDiscard: useCallback(() => setPendingDiscard(null), []),
     confirmPendingDiscard,

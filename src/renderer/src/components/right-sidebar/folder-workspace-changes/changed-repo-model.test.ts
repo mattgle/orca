@@ -4,6 +4,7 @@ import {
   buildRepoEntryKey,
   countChangedFiles,
   getRepoDiscardPathsByArea,
+  isRepoDiscardBlocked,
   selectChangedRepos,
   selectImmediateChildRepos,
   type FolderWorkspaceRepoStatusOutcome
@@ -70,10 +71,26 @@ describe('selectChangedRepos', () => {
         path: '/meta/beta',
         name: 'beta',
         branch: 'feat',
-        entries: [entry({ path: 'src/a.ts' })]
+        entries: [entry({ path: 'src/a.ts' })],
+        didHitLimit: false
       }
     ])
     expect(failed.map((repo) => repo.name)).toEqual(['delta'])
+  })
+
+  it('carries the status cap so a partial entry list is never mistaken for the full change set', () => {
+    const outcomes = new Map<string, FolderWorkspaceRepoStatusOutcome>([
+      [
+        '/meta/alpha',
+        {
+          kind: 'ready',
+          status: { ...status([entry({ path: 'a' })]), didHitLimit: true, statusLength: 1_200 }
+        }
+      ]
+    ])
+    const { changed } = selectChangedRepos(candidates, outcomes)
+    expect(changed.map((repo) => repo.didHitLimit)).toEqual([true])
+    expect(isRepoDiscardBlocked(changed[0])).toBe(true)
   })
 
   it('counts files across every changed repo', () => {

@@ -95,11 +95,7 @@ export function FolderWorkspaceChangesDiscardDialog({
             </div>
             {pendingDiscard.kind === 'repo' ? (
               <div className="mt-1 text-muted-foreground">
-                {translate(
-                  'auto.components.rightSidebar.FolderWorkspaceChangesPanel.discardRepoFileCount',
-                  '{{value0}} changed file(s)',
-                  { value0: pendingDiscard.repo.entries.length }
-                )}
+                {formatChangedFileCount(pendingDiscard.repo.entries.length)}
               </div>
             ) : null}
           </div>
@@ -126,4 +122,18 @@ export function FolderWorkspaceChangesDiscardDialog({
       </DialogContent>
     </Dialog>
   )
+}
+
+function formatChangedFileCount(count: number): string {
+  return count === 1
+    ? translate(
+        'auto.components.rightSidebar.FolderWorkspaceChangesPanel.discardRepoFileCount_one',
+        '{{count}} changed file',
+        { count }
+      )
+    : translate(
+        'auto.components.rightSidebar.FolderWorkspaceChangesPanel.discardRepoFileCount_other',
+        '{{count}} changed files',
+        { count }
+      )
 }
