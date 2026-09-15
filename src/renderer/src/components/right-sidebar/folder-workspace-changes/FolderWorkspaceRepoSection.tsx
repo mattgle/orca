@@ -40,11 +40,18 @@ export function FolderWorkspaceRepoSection({
   onDiscardRepo: () => void
   onRevealInExplorer: (worktreeId: string, absolutePath: string) => void
 }): React.JSX.Element {
-  const discardAllLabel = translate(
-    'auto.components.rightSidebar.FolderWorkspaceChangesPanel.discardAllInRepo',
-    'Discard all changes in {{value0}}',
-    { value0: repo.name }
-  )
+  // Why: a capped status keeps the button clickable so the click explains why the discard is refused.
+  const discardAllLabel = isRepoDiscardBlocked(repo)
+    ? translate(
+        'auto.components.rightSidebar.FolderWorkspaceChangesPanel.discardAllInRepoBlocked',
+        'Too many changes in {{value0}} to discard all at once',
+        { value0: repo.name }
+      )
+    : translate(
+        'auto.components.rightSidebar.FolderWorkspaceChangesPanel.discardAllInRepo',
+        'Discard all changes in {{value0}}',
+        { value0: repo.name }
+      )
 
   return (
     <div data-testid="folder-workspace-changes-repo" data-repo-path={repo.path}>
@@ -78,7 +85,7 @@ export function FolderWorkspaceRepoSection({
               icon={Undo2}
               title={discardAllLabel}
               onClick={onDiscardRepo}
-              disabled={isExecutingDiscard || isRepoDiscardBlocked(repo)}
+              disabled={isExecutingDiscard}
             />
           </div>
         </div>

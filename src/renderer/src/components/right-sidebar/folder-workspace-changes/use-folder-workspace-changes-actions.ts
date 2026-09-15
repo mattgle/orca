@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useAppStore } from '@/store'
+import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
 import { detectLanguage } from '@/lib/language-detect'
 import { joinPath } from '@/lib/path'
 import {
@@ -67,6 +68,9 @@ export function useFolderWorkspaceChangesActions({
   onMutated
 }: UseFolderWorkspaceChangesActionsArgs): FolderWorkspaceChangesActions {
   const settings = useAppStore((s) => s.settings)
+  // Why: tabs opened from this panel store the folder's runtime owner, not the focused runtime, and
+  // the editor's owner filter drops every tab on a mismatch.
+  const runtimeEnvironmentId = useAppStore((s) => getRuntimeEnvironmentIdForWorktree(s, worktreeId))
   const openDiff = useAppStore((s) => s.openDiff)
   const openFile = useAppStore((s) => s.openFile)
   const [pendingDiscard, setPendingDiscard] = useState<PendingFolderWorkspaceDiscard | null>(null)
@@ -91,12 +95,8 @@ export function useFolderWorkspaceChangesActions({
   )
 
   const editor = useMemo(
-    () =>
-      createFolderWorkspaceEditorCoordinator({
-        worktreeId,
-        runtimeEnvironmentId: settings?.activeRuntimeEnvironmentId?.trim() || null
-      }),
-    [settings, worktreeId]
+    () => createFolderWorkspaceEditorCoordinator({ worktreeId, runtimeEnvironmentId }),
+    [runtimeEnvironmentId, worktreeId]
   )
 
   const openEntry = useCallback<FolderWorkspaceChangesActions['openEntry']>(

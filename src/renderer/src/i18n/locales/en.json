@@ -16481,6 +16481,7 @@
           "noChangesCopy": "Edited files appear here as you save them.",
           "statusFailed": "Could not read git status.",
           "discardAllInRepo": "Discard all changes in {{value0}}",
+          "discardAllInRepoBlocked": "Too many changes in {{value0}} to discard all at once",
           "discardRepoAborted": "Discard all failed in {{value0}}: unable to unstage files before discard",
           "discardRepoFailed": "Failed to discard {{value0}} of the changes in {{value1}}",
           "discardRepoFailedMore": ", +{{value0}} more"
