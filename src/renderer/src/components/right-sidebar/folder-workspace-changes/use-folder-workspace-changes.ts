@@ -37,8 +37,8 @@ export type FolderWorkspaceChangesData = {
   changedRepos: FolderWorkspaceChangedRepo[]
   failedRepos: FolderWorkspaceFailedRepo[]
   scanState: FolderWorkspaceChangesScanState
-  /** The scan ended early, so `candidates` may miss repos. Shown as a notice, not treated as complete. */
-  isScanIncomplete: boolean
+  /** Set to the repo cap when the scan ended early, so `candidates` may miss repos. Null when complete. */
+  incompleteScanRepoCap: number | null
   isLoading: boolean
   refresh: () => void
   refreshStatuses: () => void
@@ -73,7 +73,7 @@ export function useFolderWorkspaceChanges({
     () => new Map()
   )
   const [scanState, setScanState] = useState<FolderWorkspaceChangesScanState>('idle')
-  const [isScanIncomplete, setIsScanIncomplete] = useState(false)
+  const [incompleteScanRepoCap, setIncompleteScanRepoCap] = useState<number | null>(null)
   const [scanGeneration, setScanGeneration] = useState(0)
   const [statusGeneration, setStatusGeneration] = useState(0)
 
@@ -84,7 +84,7 @@ export function useFolderWorkspaceChanges({
     setCandidates([])
     setOutcomes(new Map())
     setScanState('idle')
-    setIsScanIncomplete(false)
+    setIncompleteScanRepoCap(null)
   }
 
   const canRun =
@@ -107,7 +107,7 @@ export function useFolderWorkspaceChanges({
         return
       }
       setCandidates(selectImmediateChildRepos(result, folderPath))
-      setIsScanIncomplete(isNestedRepoScanIncomplete(result))
+      setIncompleteScanRepoCap(isNestedRepoScanIncomplete(result) ? result.maxRepos : null)
       setScanState('ready')
     })
     return () => {
@@ -217,7 +217,7 @@ export function useFolderWorkspaceChanges({
     changedRepos: changed,
     failedRepos: failed,
     scanState,
-    isScanIncomplete,
+    incompleteScanRepoCap,
     isLoading,
     refresh,
     refreshStatuses

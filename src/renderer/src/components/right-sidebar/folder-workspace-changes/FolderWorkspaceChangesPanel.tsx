@@ -212,17 +212,6 @@ export default function FolderWorkspaceChangesPanel({
               'Refresh to try again.'
             )}
           />
-        ) : data.scanState === 'ready' && data.isScanIncomplete && data.candidates.length === 0 ? (
-          <EmptyState
-            heading={translate(
-              'auto.components.rightSidebar.FolderWorkspaceChangesPanel.scanIncompleteTitle',
-              'Scan did not finish'
-            )}
-            supportingText={translate(
-              'auto.components.rightSidebar.FolderWorkspaceChangesPanel.scanIncompleteCopy',
-              'Some repositories may be missing. Refresh to scan again.'
-            )}
-          />
         ) : data.scanState === 'ready' && data.candidates.length === 0 ? (
           <EmptyState
             heading={translate(
@@ -237,7 +226,7 @@ export default function FolderWorkspaceChangesPanel({
         ) : !hasRepos &&
           !data.isLoading &&
           data.failedRepos.length === 0 &&
-          !data.isScanIncomplete ? (
+          data.incompleteScanRepoCap === null ? (
           <EmptyState
             heading={translate(
               'auto.components.rightSidebar.FolderWorkspaceChangesPanel.noChangesTitle',
@@ -250,13 +239,14 @@ export default function FolderWorkspaceChangesPanel({
           />
         ) : (
           <>
-            {data.isScanIncomplete ? (
+            {data.incompleteScanRepoCap !== null ? (
               <div className="mx-3 mt-2 flex items-start gap-2 rounded-md border border-border/70 bg-muted/35 px-3 py-2 text-xs">
                 <CircleAlert className="mt-0.5 size-3.5 shrink-0 text-destructive" />
                 <span>
                   {translate(
-                    'auto.components.rightSidebar.FolderWorkspaceChangesPanel.scanIncompleteCopy',
-                    'Some repositories may be missing. Refresh to scan again.'
+                    'auto.components.rightSidebar.FolderWorkspaceChangesPanel.scanRepoCapCopy',
+                    'Only the first {{value0}} repositories in this folder are scanned. Repositories beyond that are not shown.',
+                    { value0: data.incompleteScanRepoCap }
                   )}
                 </span>
               </div>
