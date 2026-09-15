@@ -7,6 +7,7 @@ import { getFolderWorkspaceConnectionId } from '@/lib/folder-workspace-connectio
 import { readIpcErrorMessage } from '@/lib/ipc-error'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
+import { parseExecutionHostId } from '../../../../../shared/execution-host'
 import { getAttachedWorktreesForFolderWorkspace } from '../folder-workspace-attached-worktrees'
 import { SourceControlHeaderIconButton } from '../source-control/panel/header-icon-button'
 import { EmptyState } from '../source-control/listing/empty-state'
@@ -51,8 +52,13 @@ export default function FolderWorkspaceChangesPanel({
     ]
   )
   const folderWorkspaceId = folderWorkspace?.id ?? null
+  // Why: the shared host resolver collapses a `runtime:` host to `local`. Reading git at the remote
+  // path through local IPC would touch the client's disk, so runtime-hosted folders stay unavailable.
+  const isRuntimeHosted = parseExecutionHostId(folderWorkspace?.executionHostId)?.kind === 'runtime'
   const connectionId = useAppStore((s) =>
-    folderWorkspaceId ? getFolderWorkspaceConnectionId(s, folderWorkspaceId) : undefined
+    folderWorkspaceId && !isRuntimeHosted
+      ? getFolderWorkspaceConnectionId(s, folderWorkspaceId)
+      : undefined
   )
   // Why: the folder workspace key is the editor's worktree id for tabs opened from this panel.
   const worktreeId = folderWorkspace ? (activeWorktreeId ?? null) : null
@@ -183,10 +189,17 @@ export default function FolderWorkspaceChangesPanel({
               'auto.components.rightSidebar.FolderWorkspaceChangesPanel.hostUnavailableTitle',
               'Folder host unavailable'
             )}
-            supportingText={translate(
-              'auto.components.rightSidebar.FolderWorkspaceChangesPanel.hostUnavailableCopy',
-              'Orca cannot tell which host owns this folder, so git status is not read.'
-            )}
+            supportingText={
+              isRuntimeHosted
+                ? translate(
+                    'auto.components.rightSidebar.FolderWorkspaceChangesPanel.runtimeHostUnsupportedCopy',
+                    'Workspace changes are not available for folders on a runtime environment yet.'
+                  )
+                : translate(
+                    'auto.components.rightSidebar.FolderWorkspaceChangesPanel.hostUnavailableCopy',
+                    'Orca cannot tell which host owns this folder, so git status is not read.'
+                  )
+            }
           />
         ) : data.scanState === 'error' ? (
           <EmptyState

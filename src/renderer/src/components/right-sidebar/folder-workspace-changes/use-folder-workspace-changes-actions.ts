@@ -1,5 +1,4 @@
-import { useCallback, useState } from 'react'
-import { toast } from 'sonner'
+import { useCallback, useMemo, useState } from 'react'
 import { useAppStore } from '@/store'
 import { detectLanguage } from '@/lib/language-detect'
 import { joinPath } from '@/lib/path'
@@ -11,7 +10,6 @@ import {
   unstageRuntimeGitPath,
   type RuntimeGitContext
 } from '@/runtime/runtime-git-client'
-import { translate } from '@/i18n/i18n'
 import type { GitStatusEntry } from '../../../../../shared/git-status-types'
 import { runDiscardAllForArea } from '../source-control/commit/discard-all-sequence'
 import { discardDeletesEntryFile } from '../source-control/commit/discard-confirmation'
@@ -29,6 +27,12 @@ import {
   isRepoDiscardBlocked,
   type FolderWorkspaceChangedRepo
 } from './changed-repo-model'
+import {
+  showRepoDiscardAbortedToast,
+  showRepoDiscardBlockedToast,
+  showRepoDiscardFailedToast
+} from './folder-workspace-discard-feedback'
+import { createFolderWorkspaceEditorCoordinator } from './folder-workspace-editor-coordination'
 
 export type PendingFolderWorkspaceDiscard =
   | { kind: 'entry'; repo: FolderWorkspaceChangedRepo; entry: GitStatusEntry }
@@ -84,6 +88,15 @@ export function useFolderWorkspaceChangesActions({
       connectionId: connectionId ?? undefined
     }),
     [connectionId, settings]
+  )
+
+  const editor = useMemo(
+    () =>
+      createFolderWorkspaceEditorCoordinator({
+        worktreeId,
+        runtimeEnvironmentId: settings?.activeRuntimeEnvironmentId?.trim() || null
+      }),
+    [settings, worktreeId]
   )
 
   const openEntry = useCallback<FolderWorkspaceChangesActions['openEntry']>(
@@ -177,58 +190,48 @@ export function useFolderWorkspaceChangesActions({
     [gitContextFor, runEntryMutation]
   )
 
-  const notifyDiscardBlocked = useCallback((repo: FolderWorkspaceChangedRepo): void => {
-    toast.error(
-      translate(
-        'auto.components.rightSidebar.FolderWorkspaceChangesPanel.discardRepoBlockedByLimit',
-        'Too many changes in {{value0}} to discard all at once',
-        { value0: repo.name }
-      ),
-      {
-        description: translate(
-          'auto.components.rightSidebar.FolderWorkspaceChangesPanel.discardRepoBlockedByLimitCopy',
-          'Git status was cut short, so only part of the change list is known. Discard from the repo itself.'
-        )
-      }
-    )
-  }, [])
-
   const discardRepo = useCallback(
     async (repo: FolderWorkspaceChangedRepo): Promise<void> => {
       // Why: a capped status lists only a prefix of the changes; discarding that prefix would report
       // success while leaving the repo dirty.
       if (isRepoDiscardBlocked(repo)) {
-        notifyDiscardBlocked(repo)
+        showRepoDiscardBlockedToast(repo.name)
         return
       }
       const context = gitContextFor(repo)
-      let failureCount = 0
-      for (const { area, paths } of getRepoDiscardPathsByArea(repo.entries)) {
+      const errors: unknown[] = []
+      const failedPaths: string[] = []
+      const areas = getRepoDiscardPathsByArea(repo.entries)
+      await editor.quiesceSaves(
+        repo.path,
+        areas.flatMap(({ paths }) => paths)
+      )
+      let aborted = false
+      for (const { area, paths } of areas) {
         const result = await runDiscardAllForArea(area, paths, {
           bulkUnstage: (targets) => bulkUnstageRuntimeGitPaths(context, targets),
           discardMany: (targets) => bulkDiscardRuntimeGitPaths(context, targets),
           discardOne: (target) => discardRuntimeGitPath(context, target),
           onError: (error) => {
-            failureCount += 1
+            errors.push(error)
             console.error('[FolderWorkspaceChanges] discard all failed', error)
           }
         })
+        editor.notifyChanged(repo.path, result.discarded)
+        failedPaths.push(...result.failed)
         if (result.aborted) {
+          aborted = true
           break
         }
       }
-      if (failureCount > 0) {
-        toast.error(
-          translate(
-            'auto.components.rightSidebar.FolderWorkspaceChangesPanel.discardRepoFailed',
-            'Failed to discard some changes in {{value0}}',
-            { value0: repo.name }
-          )
-        )
+      if (aborted) {
+        showRepoDiscardAbortedToast(repo.name, errors[0])
+      } else if (failedPaths.length > 0) {
+        showRepoDiscardFailedToast(repo.name, errors, failedPaths)
       }
       onMutated()
     },
-    [gitContextFor, notifyDiscardBlocked, onMutated]
+    [editor, gitContextFor, onMutated]
   )
 
   const confirmPendingDiscard = useCallback(async (): Promise<void> => {
@@ -245,13 +248,17 @@ export function useFolderWorkspaceChangesActions({
             pending.repo,
             pending.entry.path,
             discardDeletesEntryFile(pending.entry),
-            () => discardRuntimeGitPath(gitContextFor(pending.repo), pending.entry.path)
+            async () => {
+              await editor.quiesceSaves(pending.repo.path, [pending.entry.path])
+              await discardRuntimeGitPath(gitContextFor(pending.repo), pending.entry.path)
+              editor.notifyChanged(pending.repo.path, [pending.entry.path])
+            }
           )
         : discardRepo(pending.repo))
     } finally {
       setIsExecutingDiscard(false)
     }
-  }, [discardRepo, gitContextFor, isExecutingDiscard, pendingDiscard, runEntryMutation])
+  }, [discardRepo, editor, gitContextFor, isExecutingDiscard, pendingDiscard, runEntryMutation])
 
   return {
     openEntry,
@@ -262,16 +269,13 @@ export function useFolderWorkspaceChangesActions({
       (repo, entry) => setPendingDiscard({ kind: 'entry', repo, entry }),
       []
     ),
-    requestDiscardRepo: useCallback(
-      (repo) => {
-        if (isRepoDiscardBlocked(repo)) {
-          notifyDiscardBlocked(repo)
-          return
-        }
-        setPendingDiscard({ kind: 'repo', repo })
-      },
-      [notifyDiscardBlocked]
-    ),
+    requestDiscardRepo: useCallback((repo) => {
+      if (isRepoDiscardBlocked(repo)) {
+        showRepoDiscardBlockedToast(repo.name)
+        return
+      }
+      setPendingDiscard({ kind: 'repo', repo })
+    }, []),
     pendingDiscard,
     cancelPendingDiscard: useCallback(() => setPendingDiscard(null), []),
     confirmPendingDiscard,

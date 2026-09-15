@@ -26,7 +26,7 @@ function getRepoDiscardConfirmationCopy(repoName: string): DiscardConfirmationCo
     ),
     description: translate(
       'auto.components.rightSidebar.FolderWorkspaceChangesPanel.discardRepoDescription',
-      'This will revert modified files, unstage staged changes and delete untracked files. Ignored files are kept. This cannot be undone.'
+      'This will revert modified files, unstage staged changes and delete untracked files and folders. This cannot be undone.'
     ),
     confirmLabel: translate(
       'auto.components.rightSidebar.FolderWorkspaceChangesPanel.discardRepoConfirm',

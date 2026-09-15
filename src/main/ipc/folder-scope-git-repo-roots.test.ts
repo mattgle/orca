@@ -19,10 +19,20 @@ describe('resolveFolderScopeGitRepoRoot', () => {
     expect(resolveFolderScopeGitRepoRoot(nested, [FOLDER_ROOT], () => true)).toBeNull()
   })
 
-  it('denies the folder root itself and unrelated paths', () => {
-    expect(resolveFolderScopeGitRepoRoot(FOLDER_ROOT, [FOLDER_ROOT], () => true)).toBeNull()
+  it('authorizes the folder root itself when the folder is a git repo', () => {
+    expect(resolveFolderScopeGitRepoRoot(FOLDER_ROOT, [FOLDER_ROOT], () => true)).toBe(FOLDER_ROOT)
+  })
+
+  it('denies the folder root when it is not a git repo, and unrelated paths', () => {
+    expect(resolveFolderScopeGitRepoRoot(FOLDER_ROOT, [FOLDER_ROOT], () => false)).toBeNull()
     const elsewhere = path.resolve('/workspace/other/engine')
     expect(resolveFolderScopeGitRepoRoot(elsewhere, [FOLDER_ROOT], () => true)).toBeNull()
+  })
+
+  it('denies a directory inside a repo that is not the repo root', () => {
+    const inner = path.join(FOLDER_ROOT, 'src')
+    const isRepoRoot = (candidate: string) => candidate === FOLDER_ROOT
+    expect(resolveFolderScopeGitRepoRoot(inner, [FOLDER_ROOT], isRepoRoot)).toBeNull()
   })
 
   it('never probes git for paths outside every folder-scope root', () => {
