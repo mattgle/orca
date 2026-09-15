@@ -124,6 +124,10 @@ export default function FolderWorkspaceChangesPanel({
         )
       : null
   const hasRepos = data.changedRepos.length > 0
+  // Why: the set keeps paths of repos that became clean, so button state must come from visible repos.
+  const hasCollapsedRepo = data.changedRepos.some((repo) => collapsedRepoPaths.has(repo.path))
+  const areAllReposCollapsed =
+    hasRepos && data.changedRepos.every((repo) => collapsedRepoPaths.has(repo.path))
   const refreshLabel = translate(
     'auto.components.rightSidebar.FolderWorkspaceChangesPanel.refresh',
     'Refresh workspace changes'
@@ -151,7 +155,7 @@ export default function FolderWorkspaceChangesPanel({
               'Expand all repos'
             )}
             onClick={expandAll}
-            disabled={!hasRepos || collapsedRepoPaths.size === 0}
+            disabled={!hasCollapsedRepo}
           />
           <SourceControlHeaderIconButton
             icon={ChevronsDownUp}
@@ -160,7 +164,7 @@ export default function FolderWorkspaceChangesPanel({
               'Collapse all repos'
             )}
             onClick={collapseAll}
-            disabled={!hasRepos || collapsedRepoPaths.size === data.changedRepos.length}
+            disabled={areAllReposCollapsed}
           />
           <Tooltip>
             <TooltipTrigger asChild>
