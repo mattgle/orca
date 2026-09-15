@@ -11,6 +11,7 @@ import {
   unstageRuntimeGitPath,
   type RuntimeGitContext
 } from '@/runtime/runtime-git-client'
+import { settingsForRuntimeOwner } from '@/runtime/runtime-client-target'
 import type { GitStatusEntry } from '../../../../../shared/git-status-types'
 import { runDiscardAllForArea } from '../source-control/commit/discard-all-sequence'
 import { discardDeletesEntryFile } from '../source-control/commit/discard-confirmation'
@@ -84,13 +85,14 @@ export function useFolderWorkspaceChangesActions({
 
   const gitContextFor = useCallback(
     (repo: FolderWorkspaceChangedRepo): RuntimeGitContext => ({
-      settings,
+      // Why: route by the folder's owner, not the focused runtime, so the target matches the scan.
+      settings: settingsForRuntimeOwner(settings, runtimeEnvironmentId),
       // Why: a sibling repo has no worktree id of its own; the path-addressed IPC handles local and SSH.
       worktreeId: null,
       worktreePath: repo.path,
       connectionId: connectionId ?? undefined
     }),
-    [connectionId, settings]
+    [connectionId, runtimeEnvironmentId, settings]
   )
 
   const editor = useMemo(

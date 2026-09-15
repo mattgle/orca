@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
 import { getRuntimeGitStatus } from '@/runtime/runtime-git-client'
+import { settingsForRuntimeOwner } from '@/runtime/runtime-client-target'
 import { isWindowVisible } from '@/lib/window-visibility-interval'
 import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
 import {
@@ -62,6 +63,8 @@ export function useFolderWorkspaceChanges({
 }: UseFolderWorkspaceChangesArgs): FolderWorkspaceChangesData {
   const settings = useAppStore((s) => s.settings)
   const scanNestedRepos = useAppStore((s) => s.scanNestedRepos)
+  // Why: route scan and status by the folder's owner, not the globally focused runtime. Local and
+  // SSH folders resolve to `null`, which pins the local IPC path even while a runtime is focused.
   const activeRuntimeEnvironmentId = useAppStore((s) =>
     getRuntimeEnvironmentIdForWorktree(s, worktreeId)
   )
@@ -97,7 +100,8 @@ export function useFolderWorkspaceChanges({
     let cancelled = false
     setScanState('scanning')
     void scanNestedRepos(folderPath, connectionId ?? undefined, {
-      options: IMMEDIATE_CHILD_SCAN_OPTIONS
+      options: IMMEDIATE_CHILD_SCAN_OPTIONS,
+      runtimeEnvironmentId: activeRuntimeEnvironmentId
     }).then((result) => {
       if (cancelled) {
         return
@@ -113,7 +117,7 @@ export function useFolderWorkspaceChanges({
     return () => {
       cancelled = true
     }
-  }, [canRun, connectionId, folderPath, scanGeneration, scanNestedRepos])
+  }, [activeRuntimeEnvironmentId, canRun, connectionId, folderPath, scanGeneration, scanNestedRepos])
 
   const candidatesRef = useRef(candidates)
   candidatesRef.current = candidates
@@ -140,7 +144,7 @@ export function useFolderWorkspaceChanges({
       fetchStatus: (candidate, signal) =>
         getRuntimeGitStatus(
           {
-            settings: settingsRef.current,
+            settings: settingsForRuntimeOwner(settingsRef.current, activeRuntimeEnvironmentId),
             worktreeId: null,
             worktreePath: candidate.path,
             connectionId: connectionId ?? undefined
@@ -154,7 +158,7 @@ export function useFolderWorkspaceChanges({
     return () => {
       controller.abort()
     }
-  }, [canRun, candidatesSignature, connectionId, statusGeneration])
+  }, [activeRuntimeEnvironmentId, canRun, candidatesSignature, connectionId, statusGeneration])
 
   useEffect(() => {
     if (!canRun || !folderPath) {
