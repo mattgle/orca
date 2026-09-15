@@ -126,8 +126,7 @@ export default function FolderWorkspaceChangesPanel({
   const hasRepos = data.changedRepos.length > 0
   // Why: the set keeps paths of repos that became clean, so button state must come from visible repos.
   const hasCollapsedRepo = data.changedRepos.some((repo) => collapsedRepoPaths.has(repo.path))
-  const areAllReposCollapsed =
-    hasRepos && data.changedRepos.every((repo) => collapsedRepoPaths.has(repo.path))
+  const areAllReposCollapsed = data.changedRepos.every((repo) => collapsedRepoPaths.has(repo.path))
   const refreshLabel = translate(
     'auto.components.rightSidebar.FolderWorkspaceChangesPanel.refresh',
     'Refresh workspace changes'
@@ -164,7 +163,7 @@ export default function FolderWorkspaceChangesPanel({
               'Collapse all repos'
             )}
             onClick={collapseAll}
-            disabled={areAllReposCollapsed}
+            disabled={!hasRepos || areAllReposCollapsed}
           />
           <Tooltip>
             <TooltipTrigger asChild>
