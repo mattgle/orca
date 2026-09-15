@@ -4,6 +4,7 @@ import {
   buildRepoEntryKey,
   countChangedFiles,
   getRepoDiscardPathsByArea,
+  isNestedRepoScanIncomplete,
   isRepoDiscardBlocked,
   selectChangedRepos,
   selectImmediateChildRepos,
@@ -41,6 +42,23 @@ describe('selectImmediateChildRepos', () => {
     expect(
       selectImmediateChildRepos({ selectedPathKind: 'git_repo', repos: [] }, '/meta/app')
     ).toEqual([{ path: '/meta/app', name: 'app' }])
+  })
+})
+
+describe('isNestedRepoScanIncomplete', () => {
+  it('flags a scan that hit the repo cap, timed out, or was stopped', () => {
+    expect(isNestedRepoScanIncomplete({ truncated: false, timedOut: false, stopped: false })).toBe(
+      false
+    )
+    expect(isNestedRepoScanIncomplete({ truncated: true, timedOut: false, stopped: false })).toBe(
+      true
+    )
+    expect(isNestedRepoScanIncomplete({ truncated: false, timedOut: true, stopped: false })).toBe(
+      true
+    )
+    expect(isNestedRepoScanIncomplete({ truncated: false, timedOut: false, stopped: true })).toBe(
+      true
+    )
   })
 })
 

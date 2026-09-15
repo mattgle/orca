@@ -212,6 +212,17 @@ export default function FolderWorkspaceChangesPanel({
               'Refresh to try again.'
             )}
           />
+        ) : data.scanState === 'ready' && data.isScanIncomplete && data.candidates.length === 0 ? (
+          <EmptyState
+            heading={translate(
+              'auto.components.rightSidebar.FolderWorkspaceChangesPanel.scanIncompleteTitle',
+              'Scan did not finish'
+            )}
+            supportingText={translate(
+              'auto.components.rightSidebar.FolderWorkspaceChangesPanel.scanIncompleteCopy',
+              'Some repositories may be missing. Refresh to scan again.'
+            )}
+          />
         ) : data.scanState === 'ready' && data.candidates.length === 0 ? (
           <EmptyState
             heading={translate(
@@ -223,7 +234,10 @@ export default function FolderWorkspaceChangesPanel({
               'Only repositories directly inside this folder are scanned.'
             )}
           />
-        ) : !hasRepos && !data.isLoading && data.failedRepos.length === 0 ? (
+        ) : !hasRepos &&
+          !data.isLoading &&
+          data.failedRepos.length === 0 &&
+          !data.isScanIncomplete ? (
           <EmptyState
             heading={translate(
               'auto.components.rightSidebar.FolderWorkspaceChangesPanel.noChangesTitle',
@@ -236,6 +250,17 @@ export default function FolderWorkspaceChangesPanel({
           />
         ) : (
           <>
+            {data.isScanIncomplete ? (
+              <div className="mx-3 mt-2 flex items-start gap-2 rounded-md border border-border/70 bg-muted/35 px-3 py-2 text-xs">
+                <CircleAlert className="mt-0.5 size-3.5 shrink-0 text-destructive" />
+                <span>
+                  {translate(
+                    'auto.components.rightSidebar.FolderWorkspaceChangesPanel.scanIncompleteCopy',
+                    'Some repositories may be missing. Refresh to scan again.'
+                  )}
+                </span>
+              </div>
+            ) : null}
             {data.changedRepos.map((repo) => (
               <FolderWorkspaceRepoSection
                 key={repo.path}

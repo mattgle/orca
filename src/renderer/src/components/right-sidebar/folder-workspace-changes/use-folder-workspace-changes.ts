@@ -9,6 +9,7 @@ import {
 } from '@/hooks/worktree-file-change-event'
 import { shouldRefreshGitStatusForFileChange } from '../git-status-file-watch-refresh'
 import {
+  isNestedRepoScanIncomplete,
   selectChangedRepos,
   selectImmediateChildRepos,
   type FolderWorkspaceChangedRepo,
@@ -36,6 +37,8 @@ export type FolderWorkspaceChangesData = {
   changedRepos: FolderWorkspaceChangedRepo[]
   failedRepos: FolderWorkspaceFailedRepo[]
   scanState: FolderWorkspaceChangesScanState
+  /** The scan ended early, so `candidates` may miss repos. Shown as a notice, not treated as complete. */
+  isScanIncomplete: boolean
   isLoading: boolean
   refresh: () => void
   refreshStatuses: () => void
@@ -70,6 +73,7 @@ export function useFolderWorkspaceChanges({
     () => new Map()
   )
   const [scanState, setScanState] = useState<FolderWorkspaceChangesScanState>('idle')
+  const [isScanIncomplete, setIsScanIncomplete] = useState(false)
   const [scanGeneration, setScanGeneration] = useState(0)
   const [statusGeneration, setStatusGeneration] = useState(0)
 
@@ -80,6 +84,7 @@ export function useFolderWorkspaceChanges({
     setCandidates([])
     setOutcomes(new Map())
     setScanState('idle')
+    setIsScanIncomplete(false)
   }
 
   const canRun =
@@ -102,6 +107,7 @@ export function useFolderWorkspaceChanges({
         return
       }
       setCandidates(selectImmediateChildRepos(result, folderPath))
+      setIsScanIncomplete(isNestedRepoScanIncomplete(result))
       setScanState('ready')
     })
     return () => {
@@ -211,6 +217,7 @@ export function useFolderWorkspaceChanges({
     changedRepos: changed,
     failedRepos: failed,
     scanState,
+    isScanIncomplete,
     isLoading,
     refresh,
     refreshStatuses

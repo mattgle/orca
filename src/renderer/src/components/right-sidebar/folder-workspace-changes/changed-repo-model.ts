@@ -44,6 +44,13 @@ export function selectImmediateChildRepos(
     .sort(compareRepoName)
 }
 
+/** A bounded scan stops early on the repo cap, the timeout, or a cancel; its repo list is then only a prefix. */
+export function isNestedRepoScanIncomplete(
+  scan: Pick<NestedRepoScanResult, 'truncated' | 'timedOut' | 'stopped'>
+): boolean {
+  return scan.truncated || scan.timedOut || scan.stopped
+}
+
 export function selectChangedRepos(
   candidates: readonly FolderWorkspaceRepoCandidate[],
   outcomes: ReadonlyMap<string, FolderWorkspaceRepoStatusOutcome>

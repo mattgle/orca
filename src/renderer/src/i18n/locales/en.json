@@ -16475,6 +16475,8 @@
           "runtimeHostUnsupportedCopy": "Workspace changes are not available for folders on a runtime environment yet.",
           "scanFailedTitle": "Could not scan this folder",
           "scanFailedCopy": "Refresh to try again.",
+          "scanIncompleteTitle": "Scan did not finish",
+          "scanIncompleteCopy": "Some repositories may be missing. Refresh to scan again.",
           "noReposTitle": "No git repositories found",
           "noReposCopy": "Only repositories directly inside this folder are scanned.",
           "noChangesTitle": "No changes",
